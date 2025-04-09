@@ -20,7 +20,7 @@ def Register_view(request):
             return redirect("Home_page")
     else:
         form = UserCreationForm()
-    return render(request, "auth/Register.html", {"form": form})
+    return render(request, "Register.html", {"form": form})
 
 def Login_view(request):
     if request.method == "POST":
@@ -31,7 +31,7 @@ def Login_view(request):
             return redirect("Home_page")
     else:
         form = AuthenticationForm()
-    return render(request, "auth/Login.html", {"form": form})  
+    return render(request, "Login.html", {"form": form})  
 
 def Logout(request):
     logout(request)
