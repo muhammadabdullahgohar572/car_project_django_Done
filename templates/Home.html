@@ -1,0 +1,30 @@
+{% extends "Base.html" %}
+
+{% block "Content" %}
+<div class="container mt-4">
+    <h1 class="mb-4">Available Cars</h1>
+    <div class="row"> 
+      {% for car in car_data %}
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          {% if car.image %}
+            <img src="{{ car.image.url }}" class="card-img-top" alt="{{ car.title }}">
+          {% else %}
+            <div class="bg-secondary text-white text-center p-5">No Image Available</div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ car.title }}</h5>
+            <p class="card-text">{{ car.description }}</p>
+            <p class="card-text"><small class="text-muted">Starting Bid: ${{ car.started_bid }}</small></p>
+            <p class="card-text"><small class="text-muted">Aution End: {{ car.end_auction }}</small></p>
+            
+            <a href="{% url 'ShowDetalis' car.id %}" class="btn btn-primary">View Details</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+   
+  </div>
+
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block "Content" %}
+<div class="container py-5">
+  <div class="auction-container bg-white rounded shadow p-4">
+    <div class="text-center mb-4">
+      <h1 class="display-4">{{ car.title }}</h1>
+      <h3 class="text-muted">Django Car Auction</h3>
+    </div>
+
+    <!-- Car Details Section -->
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card h-100 border-0">
+          <img src="{{ car.image.url }}" alt="{{ car.title }}" class="card-img-top img-fluid rounded" style="max-height: 400px; object-fit: cover;">
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card h-100 border-0">
+          <div class="card-body">
+            <h2 class="card-title">{{ car.make }} {{ car.model }}</h2>
+            <p class="card-text text-muted">{{ car.description }}</p>
+            
+            <div class="bid-info mt-4">
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="fw-bold">Starting Bid:</span>
+                <span>${{ car.started_bid|floatformat:2 }}</span>
+              </div>
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="fw-bold">description:</span>
+                <span class="text-primary">{{ car.description }}</span>
+              </div>
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="fw-bold">Auction Status:</span>
+                <span class="badge bg-{% if car.is_auction_active %}success{% else %}danger{% endif %}">
+                  {% if car.is_auction_active %}Active{% else %}Ended{% endif %}
+                </span>
+              </div>
+              <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="fw-bold">Auction Ends:</span>
+                <span>{{ car.end_auction|date:"M. d, Y, h:i A" }}</span>
+              </div>
+              <div class="d-flex justify-content-between py-2">
+                <span class="fw-bold"><i class="fas fa-clock"></i> Time Remaining:</span>
+                <span id="countdown-timer" class="text-danger"></span>
+              </div>
+              
+              {% if not is_auction_active and Winner %}
+              <div class="alert alert-success mt-3">
+                <strong>Winner:</strong> {{ car.Winner.username }}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Place Bid Form -->
+            {% if car.is_auction_active %}
+            <div class="mt-4">
+              <form method="post" action="{% url 'ShowDetalis' car.id %}">
+                {% csrf_token %}
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="amount"
+                    min="{{ car.current_bid|add:1 }}"
+                    step="0.01"
+                    placeholder="Enter your bid (min ${{ car.current_bid|add:1|floatformat:2 }})"
+                    required
+                  />
+                  <button class="btn btn-primary" type="submit">
+                    Place Bid
+                  </button>
+                </div>
+                {% if messages %}
+                  {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mt-2">
+                      {{ message }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              </form>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-3">
+              This auction has ended. No more bids can be placed.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bid History -->
+    <div class="mt-5">
+      <h4 class="mb-3">Bid History</h4>
+      <div class="card">
+        <div class="card-body p-0">
+          {% if bids %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Bidder</th>
+                    <th>Amount</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for bid in bids %}
+                    <tr>
+                      <td>{{ bid.bidder.username }}</td>
+                      <td class="text-success">${{ bid.amount|floatformat:2 }}</td>
+                      <td>{{ bid.timestamp|date:"M d, Y h:i A" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center text-muted">
+              No bids have been placed yet. Be the first to bid!
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown Timer Script -->
+<script>
+  function updateCountdown() {
+    const endTime = new Date("{{ car.end_auction|date:'Y-m-d H:i:s' }}").getTime();
+    const now = new Date().getTime();
+    const distance = endTime - now;
+
+    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    let countdownText = '';
+    if (days > 0) countdownText += `${days}d `;
+    countdownText += `${hours}h ${minutes}m ${seconds}s`;
+
+    document.getElementById("countdown-timer").textContent = countdownText;
+
+    if (distance < 0) {
+      clearInterval(countdownTimer);
+      document.getElementById("countdown-timer").textContent = "Auction ended";
+    }
+  }
+
+  // Update every second
+  const countdownTimer = setInterval(updateCountdown, 1000);
+  updateCountdown(); // Initial call
+</script>
+
+<style>
+  .auction-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .bid-info {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+  }
+  .table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+</style>
+{% endblock %}
